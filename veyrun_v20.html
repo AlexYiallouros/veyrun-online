@@ -330,7 +330,7 @@ const tradePlayers={
 
 // Veyrun online starter client. Set the URL to your hosted server's ws:// or wss:// address.
 let onlineSocket=null, onlineUser=null, onlineToken=null, onlineState={players:[],friends:[],chat:[],requests:[],inventory:{},gold:0};
-let onlineStatus='offline', onlineNotice='', onlineNoticeKind=''; 
+let onlineStatus='offline', onlineNotice='', onlineNoticeKind='', onlineWorldPlayers=[]; 
 function onlinePage(){
  const connected=onlineSocket&&onlineSocket.readyState===WebSocket.OPEN;
  const status=`<span class="online-status"><i class="online-dot ${connected?'on':''}"></i>${connected?'Connected to server':onlineStatus==='connecting'?'Connecting…':'Offline'}</span>`;
@@ -339,8 +339,11 @@ function onlinePage(){
  const players=(onlineState.players||[]).filter(p=>p.username!==onlineUser);
  const friends=onlineState.friends||[];
  const reqs=onlineState.requests||[];
+ const worldPlayers=onlineWorldPlayers.length?onlineWorldPlayers:(onlineState.worldPlayers||[]);
+ const worldCard=`<div class="card"><h3 style="margin-top:0">🗺️ Shared Frontier</h3><p class="muted">Everyone connected shares this small live movement grid. Tap a direction to move your character; other players update in real time.</p><div class="notice">Your position: ${escapeChat(String((onlineState.myPosition||{}).x??'?'))}, ${escapeChat(String((onlineState.myPosition||{}).y??'?'))} • Frontier Fields</div><div class="grid"><button data-a="online-move:north">⬆️ North</button><button data-a="online-move:west">⬅️ West</button><button data-a="online-move:south">⬇️ South</button><button data-a="online-move:east">➡️ East</button></div><h4>Players in the world (${worldPlayers.length})</h4>${worldPlayers.length?worldPlayers.map(p=>`<div class="row"><span>🧙 ${escapeChat(p.username)}</span><small>Tile ${Number(p.x)}, ${Number(p.y)}</small></div>`).join(''):'<p class="muted">No players in the shared map yet.</p>'}</div>`;
+ const adminCard=onlineState.isAdmin?`<div class="card"><h3 style="margin-top:0">🛡️ Veyrun Admin Panel</h3><p class="muted">Server-checked admin actions. Use carefully: item and coin changes affect online accounts.</p><label>Target username<input id="admin-target" maxlength="18" placeholder="Player username"></label><label>Item name<input id="admin-item" maxlength="60" placeholder="Exact item name"></label><label>Quantity<input id="admin-qty" type="number" min="1" max="1000000" value="1" inputmode="numeric"></label><div class="grid"><button data-a="online-admin:giveitem">Give item</button><button data-a="online-admin:takeitem">Remove item</button></div><label>Coins amount<input id="admin-coins" type="number" min="0" max="1000000000" value="100000" inputmode="numeric"></label><div class="grid"><button data-a="online-admin:addgold">Add coins</button><button data-a="online-admin:setgold">Set coins</button></div><label>Ban reason<input id="admin-reason" maxlength="160" placeholder="Reason for ban"></label><div class="grid"><button data-a="online-admin:ban">Ban account</button><button data-a="online-admin:unban">Unban account</button><button data-a="online-admin:kick">Kick player</button></div><h4>Account overview</h4>${(onlineState.adminPlayers||[]).map(p=>`<div class="row"><span><b>${escapeChat(p.username)}</b><small>${p.online?'Online':'Offline'} • ${p.banned?'BANNED':p.role==='admin'?'ADMIN':'Player'}</small></span><span>${Number(p.gold||0).toLocaleString()} gp</span></div>`).join('')||'<p class="muted">No accounts listed.</p>'}</div>`:`<div class="card"><h3 style="margin-top:0">🛡️ Admin setup</h3><p class="muted">If you own this server, enter the private admin setup key configured in Render. Never share that key.</p><label>Admin setup key<input id="admin-claim-key" type="password" autocomplete="off" placeholder="Set VEYRUN_ADMIN_KEY in Render first"></label><button data-a="online-admin:claim">Claim admin access</button></div>`;
  return `<div class="card"><div class="eyebrow">Veyrun Online</div><h2>🌐 ${escapeChat(onlineUser)}</h2><div class="row"><span>${status}</span><button data-a="online-logout">Log out</button></div>${onlineNotice?`<p class="online-${onlineNoticeKind||'error'}">${escapeChat(onlineNotice)}</p>`:''}<div class="online-notice">This is a starter online profile. The online inventory is stored on the server and is separate from your offline save.</div><div class="row"><span>Online coins</span><b>${Number(onlineState.gold||0).toLocaleString()} gp</b></div></div>
- <div class="card"><h3 style="margin-top:0">💬 Live World Chat</h3><div id="online-chat" class="online-chat">${chat.length?chat.slice(-70).map(m=>`<div class="online-message"><span class="time">${escapeChat(m.time||'')}</span><b>${escapeChat(m.username||'System')}:</b> ${escapeChat(m.text||'')}</div>`).join(''):'<div class="chat-empty">No messages yet. Say hello to the world!</div>'}</div><div class="chat-compose"><input id="online-chat-input" maxlength="240" placeholder="Message everyone online…"><button data-a="online-send">Send</button></div></div>
+ ${worldCard}\n ${adminCard}\n <div class="card"><h3 style="margin-top:0">💬 Live World Chat</h3><div id="online-chat" class="online-chat">${chat.length?chat.slice(-70).map(m=>`<div class="online-message"><span class="time">${escapeChat(m.time||'')}</span><b>${escapeChat(m.username||'System')}:</b> ${escapeChat(m.text||'')}</div>`).join(''):'<div class="chat-empty">No messages yet. Say hello to the world!</div>'}</div><div class="chat-compose"><input id="online-chat-input" maxlength="240" placeholder="Message everyone online…"><button data-a="online-send">Send</button></div></div>
  <div class="card"><h3 style="margin-top:0">🧑‍🤝‍🧑 Players online (${players.length})</h3><div class="online-list">${players.length?players.map(p=>`<div class="online-user"><span><b>${escapeChat(p.username)}</b><small>${friends.includes(p.username)?'Friend':'Adventurer'}</small></span><span class="online-actions"><button data-a="online-friend:${escapeChat(p.username)}">${friends.includes(p.username)?'Added':'Add friend'}</button><button data-a="online-trade:${escapeChat(p.username)}">Trade</button></span></div>`).join(''):'<div class="muted">No other players online right now. Ask a friend to connect to the same server.</div>'}</div></div>
  <div class="card"><h3 style="margin-top:0">⭐ Friends</h3>${friends.length?friends.map(n=>`<div class="row"><span>🧑 ${escapeChat(n)}</span><button data-a="online-unfriend:${escapeChat(n)}">Remove</button></div>`).join(''):'<p class="muted">Add players from the online list to build your friends list.</p>'}</div>
  <div class="card"><h3 style="margin-top:0">🤝 Trade requests</h3>${reqs.length?reqs.map(r=>`<div class="online-user"><span><b>${escapeChat(r.from)}</b><small>Offers ${Number(r.offerGold||0)} gp${r.offerItem?`, ${Number(r.offerQty||1)} × ${escapeChat(r.offerItem)}`:''}; requests ${Number(r.requestGold||0)} gp${r.requestItem?`, ${Number(r.requestQty||1)} × ${escapeChat(r.requestItem)}`:''}</small></span><span class="online-actions"><button data-a="online-accept:${r.id}">Accept</button><button data-a="online-decline:${r.id}">Decline</button></span></div>`).join(''):'<p class="muted">No pending trade requests.</p>'}</div>
@@ -362,6 +365,7 @@ function onlineConnect(action){
  if(m.type==='auth_ok'){onlineUser=m.username;onlineToken=m.token;onlineState=m.state||onlineState;onlineStatus='online';onlineNotice='Signed in successfully.';onlineNoticeKind='success';render()}
  else if(m.type==='error'){onlineNotice=m.message||'Server error';onlineNoticeKind='error';if(!onlineUser)onlineStatus='offline';render()}
  else if(m.type==='state'){onlineState=m.state||onlineState;render()}
+ else if(m.type==='world_state'){onlineWorldPlayers=m.players||[];onlineState.worldPlayers=onlineWorldPlayers;render()}
  else if(m.type==='chat'){onlineState.chat=onlineState.chat||[];onlineState.chat.push(m.message);onlineState.chat=onlineState.chat.slice(-100);render()}
  else if(m.type==='notice'){onlineNotice=m.message;onlineNoticeKind='success';render()}
  else if(m.type==='trade_request'){onlineState.requests=onlineState.requests||[];onlineState.requests.push(m.request);render()}
@@ -374,6 +378,22 @@ function onlineConnect(action){
 function onlineAction(a){
  if(a==='online-login'||a==='online-register'){onlineConnect(a==='online-login'?'login':'register');return}
  if(a==='online-logout'){if(onlineSocket)onlineSocket.close();onlineUser=null;onlineToken=null;onlineState={players:[],friends:[],chat:[],requests:[],inventory:{},gold:0};onlineStatus='offline';onlineNotice='You logged out.';onlineNoticeKind='success';render();return}
+ if(a.startsWith('online-move:')){onlineSend({type:'world_move',direction:a.slice(12)});return}
+ if(a.startsWith('online-admin:')){
+   const action=a.slice(13);
+   if(action==='claim'){const key=document.getElementById('admin-claim-key')?.value||'';onlineSend({type:'admin_claim',key});return}
+   const username=document.getElementById('admin-target')?.value.trim()||'';
+   const item=document.getElementById('admin-item')?.value.trim()||'';
+   const qty=Math.max(1,Math.floor(Number(document.getElementById('admin-qty')?.value)||1));
+   const coins=Math.max(0,Math.floor(Number(document.getElementById('admin-coins')?.value)||0));
+   const reason=document.getElementById('admin-reason')?.value.trim()||'Banned by an administrator';
+   const map={giveitem:'admin_give_item',takeitem:'admin_take_item',addgold:'admin_add_gold',setgold:'admin_set_gold',ban:'admin_ban',unban:'admin_unban',kick:'admin_kick'};
+   if(action==='giveitem'||action==='takeitem')onlineSend({type:map[action],username,item,qty});
+   else if(action==='addgold'||action==='setgold')onlineSend({type:map[action],username,qty:coins});
+   else if(action==='ban')onlineSend({type:map[action],username,reason});
+   else if(map[action])onlineSend({type:map[action],username});
+   return;
+ }
  if(a==='online-send'){const el=document.getElementById('online-chat-input');const text=(el?.value||'').trim();if(text){onlineSend({type:'chat',text});if(el)el.value=''}return}
  if(a.startsWith('online-friend:')){onlineSend({type:'friend_add',username:a.slice(14)});return}
  if(a.startsWith('online-unfriend:')){onlineSend({type:'friend_remove',username:a.slice(16)});return}

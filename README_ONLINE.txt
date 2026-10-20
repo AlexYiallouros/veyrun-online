@@ -1,46 +1,37 @@
-# Veyrun Online Starter v2.0
+VEYRUN ONLINE STARTER — ADMIN + SHARED WORLD UPDATE
 
-This is a starter online layer for the Veyrun browser RPG. It adds accounts, shared live chat, online player list, friends, trade requests, and server-side inventory/coin transfers.
+Files:
+- veyrun_v20.html: mobile game client
+- veyrun_server.js: Node.js WebSocket/HTTP server
+- package.json: npm start configuration
+- README_ONLINE.txt: this guide
 
-## Quick start (PC/Mac/Linux)
+Deploy on Render:
+Build command: npm install
+Start command: npm start
+Root directory: blank
 
-1. Install Node.js 18 or newer.
-2. Extract this ZIP into a folder.
-3. Open a terminal in that folder and run:
+IMPORTANT: configure Render Environment variables before claiming admin:
+- VEYRUN_ADMIN_KEY = a long random secret you create and keep private
+- VEYRUN_ADMIN_USERNAME = your exact Veyrun account username (recommended; restricts admin claim to this account)
 
-   ```bash
-   npm install
-   npm start
-   ```
+In Render: open your Web Service -> Environment -> Add Environment Variable. Save changes and redeploy.
+Then sign into Veyrun using your chosen admin username, open Online, and enter the VEYRUN_ADMIN_KEY into Admin setup -> Claim admin access. The server persists your role in its user data.
 
-4. Open `http://localhost:8787` in your browser.
-5. Open the same URL in another browser/device connected to the same network to test two accounts.
+Admin panel:
+- Give/remove any named item by exact item name and quantity
+- Add coins or set a player's balance
+- View online/offline accounts, balances and ban state
+- Ban/unban or kick players
+All admin actions are checked by the server. Admin cannot ban/kick another admin via this panel.
 
-The online client defaults to `ws://localhost:8787`. For another device on the same Wi-Fi, set the URL in the Online tab to `ws://YOUR-COMPUTER-LAN-IP:8787`. Your firewall may need to allow the port.
+Shared world:
+- Online players share a 7x7 live movement grid in the Online tab.
+- Direction buttons update server positions and broadcast them to all connected clients.
+- This is a starter shared movement space, not yet a fully integrated graphical combat world.
 
-## Hosting for friends over the internet
-
-Deploy the folder on a Node.js host that supports long-lived WebSocket connections. Put it behind HTTPS and use `wss://your-domain/` for the Online tab. Do not expose a plain `ws://` service publicly. A reverse proxy must forward WebSocket upgrades to the Node process.
-
-## What is included
-
-- Username/password registration (passwords are salted and hashed with Node's built-in scrypt).
-- Shared world chat with basic link filtering and bounded message history.
-- Live online player list.
-- Friends list.
-- Trade requests, accept/decline, and server-side checks for item/coin balances before transfers.
-- Server-side online profile inventory and coins.
-- JSON persistence under `data/`.
-
-## Important prototype limitations
-
-- This is a starter, not a production MMO backend. It needs deployment, HTTPS/WSS, backups, rate limits, account recovery, moderation/reporting, and stronger abuse/security controls before public release.
-- The online profile inventory is separate from the offline Veyrun save. It is intentionally not automatically synced from the browser because a client-supplied inventory cannot be trusted as authoritative.
-- Trade profiles start with a small sample inventory and 100 coins. The trade system only transfers items and coins already present in the server-side online profile.
-- Friends are a stored list; friend presence/DMs and a full shared movement/combat world are not implemented yet.
-- The server keeps account and chat JSON files locally. For a real public game, use a proper database and a deployment platform with persistent storage.
-- This project is an original fan-style prototype and is not affiliated with RuneScape.
-
-## Safety
-
-Use a unique test password. Do not collect or store real personal information. Only host for people you trust until you have added moderation, rate limiting, backups, and security review.
+Security / persistence:
+- Use a strong unique VEYRUN_ADMIN_KEY. Do not paste it into GitHub or share it with players.
+- This is a prototype. Before inviting the public, add a persistent disk/database on Render, rate limiting, stronger moderation/logging, and security review.
+- Render filesystems may be ephemeral unless persistent storage is configured; account, ban, and chat JSON files can be lost on redeploy/restart depending on hosting setup.
+- Online profiles remain separate from offline localStorage saves.

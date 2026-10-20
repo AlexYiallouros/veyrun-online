@@ -1,8 +1,8 @@
 {
-  "name": "veyrun-online-starter",
-  "version": "2.0.0",
+  "name": "veyrun-online",
+  "version": "2.1.0",
   "private": true,
-  "description": "Starter Node.js WebSocket server for Veyrun multiplayer prototype",
+  "description": "Veyrun online RPG prototype server",
   "main": "veyrun_server.js",
   "scripts": {
     "start": "node veyrun_server.js"
