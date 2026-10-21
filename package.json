@@ -1,13 +1,15 @@
+
 {
   "name": "veyrun-online",
   "version": "2.1.0",
   "private": true,
-  "description": "Veyrun online RPG prototype server",
+  "description": "Veyrun online RPG prototype",
   "main": "veyrun_server.js",
   "scripts": {
     "start": "node veyrun_server.js"
   },
   "dependencies": {
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "pg": "^8.16.3"
   }
 }
